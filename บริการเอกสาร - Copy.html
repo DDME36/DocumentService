@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KhomunPang Excel Services</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" 
+      onerror="document.querySelectorAll('[data-aos]').forEach(el => { el.removeAttribute('data-aos'); el.style.opacity = '1'; })">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Prompt', sans-serif;
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4efe9 100%);
+            overflow-x: hidden; /* ป้องกันการกระตุกแนวนอน */
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        }
+        
+        /* ปรับปรุง card animation ให้ไม่กระตุก */
+        .card {
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                        box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            will-change: transform; /* ช่วยให้ GPU รองรับการเคลื่อนไหว */
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* ปรับปรุง modal transition */
+        .modal {
+            transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: scale(0.9);
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        /* ปรับปรุง button effects */
+        .btn {
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            overflow: hidden;
+            position: relative;
+            will-change: transform;
+        }
+        
+        .btn:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none; /* ป้องกันการกระตุกเมื่อ hover */
+        }
+        
+        .btn:hover:after {
+            transform: translate(-50%, -50%) scale(2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* ปรับปรุงการ highlight ให้สวยงามขึ้น */
+        .highlight {
+            position: relative;
+            display: inline-block;
+            z-index: 1;
+        }
+        
+        .highlight:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 40%; /* เพิ่มความสูงของ highlight */
+            bottom: 5px; /* ปรับตำแหน่งให้ดีขึ้น */
+            left: 0;
+            background-color: rgba(250, 204, 21, 0.4); /* สีเหลืองที่สวยงามขึ้น */
+            z-index: -1;
+            transform-origin: left;
+            animation: highlightAnimation 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            border-radius: 3px; /* เพิ่มความโค้งมนเล็กน้อย */
+        }
+        
+        /* ปรับปรุง highlight สำหรับ "ข้อมูล Excel ขนาดใหญ่" */
+        .excel-highlight {
+            position: relative;
+            z-index: 1;
+            padding: 0 10px;
+            color: #2563EB; /* สีน้ำเงินสำหรับตัวอักษร */
+            display: inline-block;
+            background: linear-gradient(90deg, rgba(254, 240, 138, 0.7) 0%, rgba(250, 204, 21, 0.7) 100%);
+            background-size: 100% 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transform: skew(-2deg); /* ทำให้เอียงนิดหน่อยเพื่อความโดดเด่น */
+            transition: all 0.3s ease;
+        }
+        
+        .excel-highlight:hover {
+            transform: skew(0deg) scale(1.03);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Animation สำหรับการ Highlight */
+        @keyframes highlightAnimation {
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
+        }
+        
+        /* เอฟเฟคส์ประกายสำหรับข้อความ Excel */
+        .excel-highlight::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -75%;
+            z-index: 2;
+            display: block;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(
+                to right, 
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 100%
+            );
+            transform: skewX(-25deg);
+            animation: excellentShine 4s infinite;
+        }
+        
+        @keyframes excellentShine {
+            0% { left: -75%; opacity: 0; }
+            20% { left: 125%; opacity: 0.7; }
+            100% { left: 125%; opacity: 0; }
+        }
+        
+        .grid-card {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .service-icon {
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                        color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
+        }
+        
+        .card:hover .service-icon {
+            transform: scale(1.2) rotate(5deg);
+            color: #3b82f6;
+        }
+
+        /* ปรับปรุงการเคลื่อนไหวของการลอย */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .floating {
+            animation: float 4s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        .line-button {
+            background-color: #06C755;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform, background-color;
+        }
+        
+        .line-button:hover {
+            background-color: #05a449;
+            transform: scale(1.05);
+        }
+
+        /* ปรับปรุง pulse animation */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 3s ease-in-out infinite;
+            will-change: transform;
+        }
+        
+        /* เพิ่ม preload fonts และทรัพยากรสำคัญเพื่อลดการกระตุก */
+        .preload-font {
+            position: absolute;
+            visibility: hidden;
+            font-family: 'Prompt', sans-serif;
+        }
+        
+        /* ปรับปรุง scroll performance */
+        .scroll-container {
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* ปรับปรุง mobile menu */
+        #mobile-menu {
+            transition: opacity 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), visibility 0.3s;
+            will-change: opacity;
+        }
+    </style>
+</head>
+<body>
+    <!-- Preload important fonts to reduce layout shift -->
+    <div class="preload-font" aria-hidden="true">
+        <span style="font-weight:300;">A</span>
+        <span style="font-weight:400;">A</span>
+        <span style="font-weight:500;">A</span>
+        <span style="font-weight:600;">A</span>
+        <span style="font-weight:700;">A</span>
+    </div>
+
+    <!-- Header -->
+    <header class="w-full py-4 px-6 md:px-12 flex justify-between items-center sticky top-0 z-10 bg-white bg-opacity-90 backdrop-filter backdrop-blur-lg shadow-sm">
+        <div class="flex items-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">
+                <span class="text-blue-500">Khomun</span><span class="text-blue-700">Pang</span>
+            </h1>
+        </div>
+        <div class="hidden md:flex space-x-6 text-gray-700">
+            <a href="#services" class="hover:text-blue-500 transition-colors">บริการของเรา</a>
+            <a href="#contact" class="hover:text-blue-500 transition-colors">ติดต่อเรา</a>
+        </div>
+        <div class="md:hidden">
+            <button id="menu-toggle" class="text-gray-700 hover:text-blue-500 transition-colors focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Menu ปรับปรุงให้ไม่กระตุก -->
+    <div id="mobile-menu" class="fixed inset-0 bg-white bg-opacity-95 z-20 flex flex-col items-center justify-center hidden transition-all duration-300 opacity-0 invisible">
+        <button id="close-menu" class="absolute top-6 right-6 text-gray-700 hover:text-blue-500 transition-colors focus:outline-none">
+            <i class="fas fa-times text-2xl"></i>
+        </button>
+        <div class="flex flex-col space-y-6 text-xl">
+            <a href="#services" class="hover:text-blue-500 transition-colors">บริการของเรา</a>
+            <a href="#contact" class="hover:text-blue-500 transition-colors">ติดต่อเรา</a>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <section class="py-12 md:py-20 px-6 md:px-12 text-center">
+        <div data-aos="fade-up" data-aos-duration="1000" class="max-w-4xl mx-auto">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-6">
+                <span class="highlight">บริการจัดการและวิเคราะห์</span><br>
+                <span class="excel-highlight">ข้อมูล Excel ขนาดใหญ่</span>
+            </h1>
+            <p class="text-xl text-gray-600 mb-8">รองรับข้อมูลนับแสนแถว พร้อมระบบอัตโนมัติด้วย VBA <br>ตามความต้องการของธุรกิจคุณ</p>
+            <div class="flex flex-col md:flex-row justify-center gap-4">
+                <a href="#services" class="btn px-8 py-3 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    ดูบริการของเรา
+                </a>
+                <a href="#contact" class="btn px-8 py-3 rounded-full bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50">
+                    ติดต่อเรา
+                </a>
+            </div>
+        </div>
+        <div class="mt-12 md:mt-20 relative floating">
+            <img src="Khomunpang.png" alt="Excel Icon" class="w-24 h-24 md:w-32 md:h-32 mx-auto text-blue-500">
+        </div>
+    </section>
+
+    <!-- Services -->
+    <section id="services" class="py-16 px-6 md:px-12 bg-white scroll-container">
+        <div class="max-w-6xl mx-auto">
+            <h2 data-aos="fade-up" class="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-800">บริการของเรา</h2>
+            <div class="grid-card">
+                <!-- Service 1 -->
+                <div data-aos="fade-up" data-aos-delay="100" class="card rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                    <div class="service-icon text-blue-500 mb-4">
+                        <i class="fas fa-database text-5xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">จัดการข้อมูลขนาดใหญ่</h3>
+                    <p class="text-gray-600 mb-4">รองรับข้อมูลนับแสนแถวด้วยประสิทธิภาพสูง</p>
+                    <button class="service-details btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 focus:outline-none" data-service="service1">
+                        ดูรายละเอียด
+                    </button>
+                </div>
+
+                <!-- Service 2 -->
+                <div data-aos="fade-up" data-aos-delay="150" class="card rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                    <div class="service-icon text-blue-500 mb-4">
+                        <i class="fas fa-chart-line text-5xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">วิเคราะห์ข้อมูลเชิงลึก</h3>
+                    <p class="text-gray-600 mb-4">ค้นพบข้อมูลเชิงลึกเพื่อการตัดสินใจที่ชาญฉลาด</p>
+                    <button class="service-details btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 focus:outline-none" data-service="service2">
+                        ดูรายละเอียด
+                    </button>
+                </div>
+
+                <!-- Service 3 -->
+                <div data-aos="fade-up" data-aos-delay="200" class="card rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                    <div class="service-icon text-blue-500 mb-4">
+                        <i class="fas fa-code text-5xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">พัฒนาระบบด้วย VBA</h3>
+                    <p class="text-gray-600 mb-4">สร้างระบบอัตโนมัติเพื่อเพิ่มประสิทธิภาพการทำงาน</p>
+                    <button class="service-details btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 focus:outline-none" data-service="service3">
+                        ดูรายละเอียด
+                    </button>
+                </div>
+
+                <!-- Service 4 -->
+                <div data-aos="fade-up" data-aos-delay="250" class="card rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                    <div class="service-icon text-blue-500 mb-4">
+                        <i class="fas fa-laptop-code text-5xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">แอปพลิเคชันใน Excel</h3>
+                    <p class="text-gray-600 mb-4">พัฒนาแอปพลิเคชันเต็มรูปแบบบน Excel</p>
+                    <button class="service-details btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 focus:outline-none" data-service="service4">
+                        ดูรายละเอียด
+                    </button>
+                </div>
+
+                <!-- Service 5 -->
+                <div data-aos="fade-up" data-aos-delay="300" class="card rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                    <div class="service-icon text-blue-500 mb-4">
+                        <i class="fas fa-cogs text-5xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">ระบบประมวลผลอัตโนมัติ</h3>
+                    <p class="text-gray-600 mb-4">ประหยัดเวลาด้วยระบบประมวลผลอัตโนมัติที่แม่นยำ</p>
+                    <button class="service-details btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 focus:outline-none" data-service="service5">
+                        ดูรายละเอียด
+                    </button>
+                </div>
+
+                <!-- Service 6 -->
+                <div data-aos="fade-up" data-aos-delay="350" class="card rounded-xl overflow-hidden shadow-lg p-6 text-center">
+                    <div class="service-icon text-blue-500 mb-4">
+                        <i class="fas fa-chalkboard-teacher text-5xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">ฝึกอบรมเฉพาะทาง</h3>
+                    <p class="text-gray-600 mb-4">หลักสูตรการใช้งาน Excel ขั้นสูงและการเขียน VBA</p>
+                    <button class="service-details btn px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 focus:outline-none" data-service="service6">
+                        ดูรายละเอียด
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="py-16 px-6 md:px-12 gradient-bg text-white">
+        <div data-aos="fade-up" class="max-w-4xl mx-auto text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">ติดต่อเรา</h2>
+            <p class="text-xl mb-8">สนใจบริการหรือต้องการข้อมูลเพิ่มเติม? ติดต่อเราผ่าน Line ได้ตามช่องทางด้านล่าง</p>
+            
+            <div class="flex flex-col md:flex-row items-center justify-center space-y-6 md:space-y-0 md:space-x-8">
+                <div class="bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-xl p-6 w-full max-w-sm pulse">
+                    <h3 class="text-xl font-semibold mb-3">Line คุณโดม</h3>
+                    <p class="mb-4">ติดต่อเราผ่าน Line เพื่อรับข้อมูลและคำปรึกษาเพิ่มเติม</p>
+                    <div class="flex justify-center">
+                        <a href="https://line.me/ti/p/FY_E24MWyp" target="_blank" class="line-button py-3 px-6 rounded-full text-white font-medium flex items-center focus:outline-none">
+                            <i class="fab fa-line text-xl mr-2"></i>
+                            DOME
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-6 bg-gray-800 text-white text-center">
+        <div class="container mx-auto px-6">
+            <p>© 2025 KhomunPang. สงวนลิขสิทธิ์.</p>
+        </div>
+    </footer>
+
+    <!-- Service Modals -->
+    <div id="serviceModal" class="modal fixed inset-0 z-50 overflow-auto flex justify-center items-center hidden">
+        <div class="modal-overlay absolute inset-0 bg-black opacity-50"></div>
+        
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-md mx-4 p-6 relative w-full">
+            <button class="modal-close absolute top-4 right-4 text-gray-500 hover:text-gray-700 focus:outline-none">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            
+            <div id="modalContent">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <script>
+        // ปรับปรุงการใช้งาน JavaScript เพื่อลดการกระตุก
+        document.addEventListener('DOMContentLoaded', function() {
+            // ตรวจสอบว่า AOS ถูกโหลดหรือไม่ก่อนที่จะเรียกใช้
+            if (typeof AOS !== 'undefined') {
+                // Initialize AOS with improved settings
+                AOS.init({
+                    duration: 800,
+                    once: true,
+                    disable: 'mobile', // ปิดใช้งานบนมือถือเพื่อลดการกระตุก
+                    throttleDelay: 99 // ลดการทำงานหนักเกินไป
+                });
+            } else {
+                console.log("AOS library not loaded, skipping animation initialization");
+                // ทำให้ element ที่ควรจะมี animation แสดงผลทันทีแทน
+                document.querySelectorAll('[data-aos]').forEach(el => {
+                    el.removeAttribute('data-aos');
+                    el.style.opacity = '1';
+                });
+            }
+
+            // เก็บ references ไว้เพื่อลดการค้นหา DOM ซ้ำๆ
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuToggle = document.getElementById('menu-toggle');
+            const closeMenu = document.getElementById('close-menu');
+            const modal = document.getElementById('serviceModal');
+            const modalContent = document.getElementById('modalContent');
+            const closeButtons = document.querySelectorAll('.modal-close, .modal-overlay');
+            const serviceButtons = document.querySelectorAll('.service-details');
+            const mobileMenuLinks = document.querySelectorAll('#mobile-menu a');
+            const smoothLinks = document.querySelectorAll('a[href^="#"]');
+            
+            // ใช้ requestAnimationFrame เพื่อให้การ animation ราบรื่นขึ้น
+            function toggleMobileMenu(show) {
+                requestAnimationFrame(() => {
+                    mobileMenu.classList.toggle('hidden', !show);
+                    // Small delay เพื่อให้ CSS transition ทำงานได้อย่างเหมาะสม
+                    setTimeout(() => {
+                        mobileMenu.style.opacity = show ? "1" : "0";
+                        mobileMenu.style.visibility = show ? "visible" : "hidden";
+                    }, 10);
+                });
+            }
+
+            // Mobile Menu Toggle
+            menuToggle.addEventListener('click', function() {
+                toggleMobileMenu(true);
+            });
+
+            closeMenu.addEventListener('click', function() {
+                toggleMobileMenu(false);
+            });
+
+            // Service Details และ Modal
+            const serviceDetails = {
+                service1: {
+                    title: "จัดการข้อมูลขนาดใหญ่",
+                    description: "เรามีประสบการณ์ในการจัดการข้อมูล Excel ขนาดใหญ่นับแสนแถว ด้วยเทคนิคและเครื่องมือที่ทันสมัย ช่วยให้คุณประมวลผลข้อมูลจำนวนมากได้อย่างรวดเร็วและมีประสิทธิภาพ",
+                    features: [
+                        "นำเข้าข้อมูลจากหลายแหล่งและหลายรูปแบบ",
+                        "รวมข้อมูลจากหลายไฟล์เข้าด้วยกัน",
+                        "ทำความสะอาดและแก้ไขข้อมูลที่ไม่สมบูรณ์",
+                        "ตรวจสอบและกำจัดข้อมูลซ้ำซ้อน",
+                        "จัดโครงสร้างข้อมูลให้เหมาะสมสำหรับการใช้งาน"
+                    ],
+                    icon: "database"
+                },
+                service2: {
+                    title: "วิเคราะห์ข้อมูลเชิงลึก",
+                    description: "เราใช้เทคนิคการวิเคราะห์ข้อมูลขั้นสูงเพื่อค้นหาข้อมูลเชิงลึกที่มีคุณค่าจากข้อมูลดิบของคุณ ช่วยให้คุณตัดสินใจทางธุรกิจได้อย่างมีประสิทธิภาพ",
+                    features: [
+                        "วิเคราะห์แนวโน้มและรูปแบบของข้อมูล",
+                        "ค้นหาความสัมพันธ์ระหว่างตัวแปรต่างๆ",
+                        "สร้างแดชบอร์ดสรุปข้อมูลที่สำคัญ",
+                        "วิเคราะห์การกระจายตัวของข้อมูล",
+                        "สร้างโมเดลการทำนายสำหรับอนาคต"
+                    ],
+                    icon: "chart-line"
+                },
+                service3: {
+                    title: "พัฒนาระบบด้วย VBA",
+                    description: "VBA เป็นเครื่องมือที่ทรงพลังใน Excel ที่ช่วยให้คุณสามารถสร้างระบบอัตโนมัติ ลดเวลาในการทำงานที่ซ้ำซ้อน และเพิ่มประสิทธิภาพในการทำงาน",
+                    features: [
+                        "สร้างมาโครเพื่อทำงานซ้ำๆ อัตโนมัติ",
+                        "พัฒนาฟอร์มกรอกข้อมูลแบบกำหนดเอง",
+                        "สร้างระบบรายงานอัตโนมัติประจำวัน/สัปดาห์",
+                        "พัฒนาเครื่องมือประมวลผลข้อมูลเฉพาะทาง",
+                        "สร้างระบบตรวจสอบและแก้ไขข้อมูลอัตโนมัติ"
+                    ],
+                    icon: "code"
+                },
+                service4: {
+                    title: "แอปพลิเคชันใน Excel",
+                    description: "Excel ไม่ได้เป็นเพียงเครื่องมือคำนวณและจัดการข้อมูลเท่านั้น แต่ยังสามารถพัฒนาเป็นแอปพลิเคชันเต็มรูปแบบที่มีหน้าจอผู้ใช้ที่เป็นมิตร",
+                    features: [
+                        "ระบบจัดการสินค้าคงคลัง",
+                        "ระบบจัดการลูกค้า (CRM)",
+                        "ระบบบัญชีและการเงินขนาดเล็ก",
+                        "ระบบจัดตารางเวลาและตารางการทำงาน",
+                        "ระบบจัดการโครงการและติดตามความคืบหน้า"
+                    ],
+                    icon: "laptop-code"
+                },
+                service5: {
+                    title: "ระบบประมวลผลอัตโนมัติ",
+                    description: "การประมวลผลข้อมูลที่ต้องทำซ้ำๆ เป็นประจำเป็นงานที่เสียเวลาและมีความเสี่ยงต่อความผิดพลาด เราสร้างระบบประมวลผลอัตโนมัติที่ช่วยให้คุณประหยัดเวลา",
+                    features: [
+                        "ระบบนำเข้าและประมวลผลข้อมูลอัตโนมัติ",
+                        "สร้างรายงานและส่งอีเมลตามตารางเวลาที่กำหนด",
+                        "ระบบแจ้งเตือนเมื่อพบข้อมูลผิดปกติ",
+                        "ประมวลผลข้อมูลและอัปเดตแดชบอร์ดอัตโนมัติ",
+                        "ระบบสำรองและจัดเก็บข้อมูลอัตโนมัติ"
+                    ],
+                    icon: "cogs"
+                },
+                service6: {
+                    title: "ฝึกอบรมเฉพาะทาง",
+                    description: "การพัฒนาทักษะด้าน Excel และ VBA ให้กับทีมของคุณเป็นการลงทุนที่คุ้มค่า ช่วยเพิ่มประสิทธิภาพในการทำงานและลดการพึ่งพาผู้เชี่ยวชาญภายนอก",
+                    features: [
+                        "Excel สำหรับการวิเคราะห์ข้อมูล",
+                        "สูตรและฟังก์ชันขั้นสูงใน Excel",
+                        "การใช้งาน Power Query และ Power Pivot",
+                        "การสร้างแดชบอร์ดและการนำเสนอข้อมูล",
+                        "พื้นฐานการเขียน VBA สำหรับผู้เริ่มต้น"
+                    ],
+                    icon: "chalkboard-teacher"
+                }
+            };
+
+            // ปรับปรุงฟังก์ชัน open modal ด้วย requestAnimationFrame
+            function openModal(serviceId) {
+                const service = serviceDetails[serviceId];
+                
+                let featuresHTML = '';
+                service.features.forEach(feature => {
+                    featuresHTML += `<li class="flex items-start mb-2">
+                        <i class="fas fa-check-circle text-green-500 mr-2 mt-1"></i>
+                        <span>${feature}</span>
+                    </li>`;
+                });
+                
+                // สร้าง modal content ไว้ล่วงหน้าเพื่อลดการกระตุก
+                const content = `
+                    <div class="text-center mb-6">
+                        <div class="mx-auto bg-blue-100 rounded-full w-20 h-20 flex items-center justify-center mb-4">
+                            <i class="fas fa-${service.icon} text-blue-500 text-3xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800">${service.title}</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">${service.description}</p>
+                    <h4 class="font-semibold text-gray-800 mb-2">บริการที่ครอบคลุม:</h4>
+                    <ul class="text-gray-600 mb-6">
+                        ${featuresHTML}
+                    </ul>
+                    <div class="text-center">
+                        <a href="#contact" class="btn px-6 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 focus:outline-none" onclick="closeModal()">
+                            สนใจบริการนี้
+                        </a>
+                    </div>
+                `;
+                
+                // ใช้ requestAnimationFrame เพื่อปรับปรุงประสิทธิภาพการแสดงผล
+                requestAnimationFrame(() => {
+                    modalContent.innerHTML = content;
+                    modal.classList.remove('hidden');
+                    
+                    // เพิ่ม small delay เพื่อให้ CSS transition ทำงานได้อย่างเหมาะสม
+                    setTimeout(() => {
+                        modal.classList.add('active');
+                        const modalContentEl = document.querySelector('.modal-content');
+                        modalContentEl.style.transform = 'scale(1)';
+                        modalContentEl.style.opacity = '1';
+                    }, 10);
+                });
+            }
+
+            // ปรับปรุงฟังก์ชัน close modal
+            function closeModal() {
+                const modalContentEl = document.querySelector('.modal-content');
+                modalContentEl.style.transform = 'scale(0.9)';
+                modalContentEl.style.opacity = '0';
+                
+                // ใช้ timeout เพื่อรอให้ animation จบก่อนที่จะซ่อน modal
+                setTimeout(() => {
+                    modal.classList.remove('active');
+                    
+                    // เพิ่ม small delay ก่อนที่จะซ่อน modal เพื่อความราบรื่น
+                    setTimeout(() => {
+                        modal.classList.add('hidden');
+                    }, 50);
+                }, 250);
+            }
+
+            // Set global function to make it accessible for inline onclick
+            window.closeModal = closeModal;
+
+            // Add event listeners to service buttons
+            serviceButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const serviceId = this.getAttribute('data-service');
+                    openModal(serviceId);
+                });
+            });
+
+            // Add event listeners to close buttons
+            closeButtons.forEach(button => {
+                button.addEventListener('click', closeModal);
+            });
+
+            // Close modal when clicking outside content
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            // Mobile menu links closing
+            mobileMenuLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    toggleMobileMenu(false);
+                });
+            });
+
+            // Improved smooth scrolling for anchor links
+            smoothLinks.forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId === "#") return;
+                    
+                    const targetElement = document.querySelector(targetId);
+                    
+                    if (targetElement) {
+                        // ใช้ native smooth scroll ที่มีประสิทธิภาพดีกว่า
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                            inline: 'nearest'
+                        });
+                    }
+                });
+            });
+            
+            // เพิ่มประสิทธิภาพโดยการลด reflow และ repaint ใน DOM
+            function debounce(func, wait = 20, immediate = true) {
+                let timeout;
+                return function() {
+                    const context = this, args = arguments;
+                    const later = function() {
+                        timeout = null;
+                        if (!immediate) func.apply(context, args);
+                    };
+                    const callNow = immediate && !timeout;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                    if (callNow) func.apply(context, args);
+                };
+            }
+            
+            // ประสิทธิภาพที่ดีขึ้นสำหรับการจัดการเหตุการณ์ scroll
+            window.addEventListener('scroll', debounce(function() {
+                // ไม่ต้องทำอะไรมาก เพียงแค่ใช้ debounce เพื่อลดการทำงานที่ซ้ำซ้อน
+            }));
+            
+            // ทำให้แน่ใจว่าทุก images มีการกำหนดขนาด
+            document.querySelectorAll('img').forEach(img => {
+                if (!img.hasAttribute('width') || !img.hasAttribute('height')) {
+                    // ถ้าไม่มีการกำหนดขนาด ให้กำหนดตามค่า CSS หรือขนาดจริง
+                    if (img.getAttribute('class') && img.getAttribute('class').includes('w-')) {
+                        // มีการกำหนดความกว้างด้วย Tailwind CSS classes แล้ว
+                    } else {
+                        img.style.aspectRatio = 'auto';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
